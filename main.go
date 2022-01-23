@@ -122,10 +122,10 @@ func main() {
 
 	//Make compact format bp
 	var compbp compBPData
-	var entNameMap = make(map[string]uint16)
-	var tileNameMap = make(map[string]uint16)
+	var entNameMap = make(map[string]uint8)
+	var tileNameMap = make(map[string]uint8)
 
-	var entNumber uint16 = 1
+	var entNumber uint8 = 1
 	for _, ent := range newbook.Blueprint.Entities {
 		if entNameMap[ent.Name] == 0 {
 			entNameMap[ent.Name] = entNumber
@@ -142,7 +142,7 @@ func main() {
 			xyh = true
 		}
 		compbp.Ents = append(compbp.Ents, compEntity{
-			X: int32(ent.Position.X), Y: int32(ent.Position.Y),
+			X: uint16(ent.Position.X), Y: uint16(ent.Position.Y),
 			XYh: xyh,
 			Dir: ent.Direction, Name: entNameMap[ent.Name],
 		})
@@ -169,7 +169,7 @@ func main() {
 			xyh = true
 		}
 		compbp.Tiles = append(compbp.Tiles, compTile{
-			X: int32(tile.Position.X), Y: int32(tile.Position.Y),
+			X: uint16(tile.Position.X), Y: uint16(tile.Position.Y),
 			XYh: xyh, Name: tileNameMap[tile.Name],
 		})
 		compbp.TileNames = make([]string, len(tileNameMap))
@@ -190,10 +190,20 @@ func main() {
 	gz := compressGzip(buf.Bytes())
 	fmt.Printf("gz length: %v\n", len(gz))
 
-	dst := make([]byte, ascii85.MaxEncodedLen(4+len(gz)))
+	dst := make([]byte, ascii85.MaxEncodedLen(len(gz)))
 	ascii85.Encode(dst, gz)
-	fmt.Printf("asci85 length: %v\n", len(dst))
+	dst = bytes.Trim(dst, "\x00")
+	dstStr := string(dst)
+	fmt.Printf("asci85 length: %v\n", len(dstStr))
 	//fmt.Println(string(dst))
+
+	fileName = "micro.txt"
+	err = os.WriteFile(fileName, []byte(dstStr), 0644)
+	if err != nil {
+		fmt.Println("ERROR: Failed to write dst:", err)
+		os.Exit(1)
+	}
+	fmt.Println("Wrote dst to", fileName)
 }
 
 type compBPData struct {
@@ -208,20 +218,20 @@ type compBPData struct {
 }
 
 type compTile struct {
-	X    int32
-	Y    int32
+	X    uint16
+	Y    uint16
 	XYh  bool
-	Name uint16
+	Name uint8
 }
 
 type compEntity struct {
-	X   int32
-	Y   int32
+	X   uint16
+	Y   uint16
 	XYh bool
 
 	Dir uint8
 
-	Name uint16
+	Name uint8
 }
 
 func compressGzip(data []byte) []byte {
