@@ -77,8 +77,8 @@ func decompress() {
 			newX = float32(ent.Pos.X) + 0.5
 			newY = float32(ent.Pos.Y) + 0.5
 		}
-		bp.Blueprint.Entities = append(bp.Blueprint.Entities, Ent{Entity_number: EntNumber, Name: decompbp.EntNames[ent.Name-1],
-			Position: Xy{X: newX, Y: newY}, Direction: ent.Dir, Recipe: EntRec[ent.Rec-1], Type: EntType[ent.Type-1]})
+		bp.Blueprint.Entities = append(bp.Blueprint.Entities, Ent{Entity_number: EntNumber, Name: decompbp.EntNames[ent.Name],
+			Position: Xy{X: newX, Y: newY}, Direction: ent.Dir, Recipe: EntRec[ent.Rec], Type: EntType[ent.Type], Neighbours: ent.Neighbours})
 		EntNumber++
 	}
 
@@ -90,7 +90,7 @@ func decompress() {
 			newX = float32(tile.Pos.X) + 0.5
 			newY = float32(tile.Pos.Y) + 0.5
 		}
-		bp.Blueprint.Tiles = append(bp.Blueprint.Tiles, Tile{Name: decompbp.TileNames[tile.Name-1], Position: Xy{X: newX, Y: newY}})
+		bp.Blueprint.Tiles = append(bp.Blueprint.Tiles, Tile{Name: decompbp.TileNames[tile.Name], Position: Xy{X: newX, Y: newY}})
 		EntNumber++
 	}
 

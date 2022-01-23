@@ -110,7 +110,6 @@ type compBPData struct {
 	EntNames []string
 	EntRec   []string
 	EntType  []string
-	Items    []string
 
 	Tiles     []compTile
 	TileNames []string
@@ -126,7 +125,7 @@ type compTile struct {
 }
 
 type compItems struct {
-	Name  int
+	Name  string
 	Count int
 }
 
@@ -136,7 +135,6 @@ type compEntity struct {
 	Dir        uint8
 	Type       uint16
 	Rec        uint16
-	Items      []compItems
 	Neighbours []uint16
 }
 

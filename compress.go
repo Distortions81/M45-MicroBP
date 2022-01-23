@@ -107,22 +107,22 @@ func compress() {
 		}
 	}
 
-	compbp.EntNames = make([]string, len(entNameMap))
+	compbp.EntNames = make([]string, len(entNameMap)+1)
 	for key, nameNum := range entNameMap {
-		compbp.EntNames[nameNum-1] = key
+		compbp.EntNames[nameNum] = key
 	}
-	compbp.EntRec = make([]string, len(recipeMap))
+	compbp.EntRec = make([]string, len(recipeMap)+1)
 	for key, nameNum := range recipeMap {
-		compbp.EntRec[nameNum-1] = key
+		compbp.EntRec[nameNum] = key
 	}
-	compbp.EntType = make([]string, len(typeMap))
+	compbp.EntType = make([]string, len(typeMap)+1)
 	for key, nameNum := range typeMap {
-		compbp.EntType[nameNum-1] = key
+		compbp.EntType[nameNum] = key
 	}
 	//Tiles
-	compbp.TileNames = make([]string, len(tileNameMap))
+	compbp.TileNames = make([]string, len(tileNameMap)+1)
 	for key, nameNum := range tileNameMap {
-		compbp.TileNames[nameNum-1] = key
+		compbp.TileNames[nameNum] = key
 	}
 
 	for _, ent := range newbook.Blueprint.Entities {
@@ -135,7 +135,7 @@ func compress() {
 		}
 		compbp.Ents = append(compbp.Ents, compEntity{
 			Pos: compXy{X: int16(ent.Position.X), Y: int16(ent.Position.Y), XYh: xyh},
-			Dir: ent.Direction, Name: entNameMap[ent.Name], Type: typeMap[ent.Type], Rec: recipeMap[ent.Recipe]},
+			Dir: ent.Direction, Name: entNameMap[ent.Name], Type: typeMap[ent.Type], Rec: recipeMap[ent.Recipe], Neighbours: ent.Neighbours},
 		)
 	}
 
