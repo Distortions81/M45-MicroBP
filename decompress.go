@@ -3,10 +3,9 @@ package main
 import (
 	"bytes"
 	"compress/zlib"
-	"encoding/gob"
 	"encoding/json"
 	"fmt"
-	"log"
+	"io/ioutil"
 	"os"
 )
 
@@ -39,10 +38,12 @@ func decompress() {
 		os.Exit(1)
 	}
 
-	dec := gob.NewDecoder(r)
+	enflated, err := ioutil.ReadAll(r)
 
-	if err := dec.Decode(&decompbp); err != nil {
-		log.Fatal(err)
+	err = json.Unmarshal(enflated, &decompbp)
+	if err != nil {
+		fmt.Println("ERROR: JSON Unmarshal failure:", err)
+		os.Exit(1)
 	}
 
 	var EntNames []string = make([]string, len(decompbp.EntNames))
@@ -81,6 +82,7 @@ func decompress() {
 			Position: Xy{X: newX, Y: newY}, Direction: ent.Dir, Recipe: EntRec[ent.Rec], Type: EntType[ent.Type], Neighbours: ent.Neighbours})
 		EntNumber++
 	}
+	bp.Blueprint.Icons = decompbp.Icons
 
 	//Tiles
 	for _, tile := range decompbp.Tiles {

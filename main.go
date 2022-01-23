@@ -17,37 +17,37 @@ type Xy struct {
 }
 
 type Tile struct {
-	Position Xy     `json:"position"`
-	Name     string `json:"name"`
+	Position Xy     `json:"position,omitempty"`
+	Name     string `json:"name,omitempty"`
 }
 
 type Ent struct {
-	Entity_number int      `json:"entity_number"`
+	Entity_number int      `json:"entity_number,omitempty"`
 	Name          string   `json:"name"`
-	Position      Xy       `json:"position"`
-	Direction     uint8    `json:"direction"`
-	Recipe        string   `json:"recipe"`
-	Neighbours    []uint16 `json:"neighbours"`
-	Type          string   `json:"type"`
+	Position      Xy       `json:"position,omitempty"`
+	Direction     uint8    `json:"direction,omitempty"`
+	Recipe        string   `json:"recipe,omitempty"`
+	Neighbours    []uint16 `json:"neighbours,omitempty"`
+	Type          string   `json:"type,omitempty"`
 }
 
 type SignalData struct {
-	Type string `json:"type"`
-	Name string `json:"name"`
+	Type string `json:"type,omitempty"`
+	Name string `json:"name,omitempty"`
 }
 
 type Icn struct {
-	Signal SignalData `json:"signaldata"`
-	Index  uint16     `json:"index"`
+	Signal SignalData `json:"signal,omitempty"`
+	Index  uint16     `json:"index,omitempty"`
 }
 
 type BluePrintData struct {
-	Entities []Ent  `json:"entities"`
-	Tiles    []Tile `json:"tiles"`
-	Icons    []Icn  `json:"icons"`
-	Item     string `json:"item"`
-	Label    string `json:"label"`
-	Version  uint64 `json:"version"`
+	Entities []Ent  `json:"entities,omitempty"`
+	Tiles    []Tile `json:"tiles,omitempty"`
+	Icons    []Icn  `json:"icons,omitempty"`
+	Item     string `json:"item,omitempty"`
+	Label    string `json:"label,omitempty"`
+	Version  uint64 `json:"version,omitempty"`
 }
 type BluePrintsData struct {
 	Blueprint BluePrintData `json:"blueprint"`
@@ -100,42 +100,38 @@ func main() {
 }
 
 type compXy struct {
-	X   int16
-	Y   int16
-	XYh bool
+	X   int16 `json:"x,omitempty"`
+	Y   int16 `json:"y,omitempty"`
+	XYh bool  `json:"z,omitempty"`
 }
 
 type compBPData struct {
-	Ents     []compEntity
-	EntNames []string
-	EntRec   []string
-	EntType  []string
+	Ents     []compEntity `json:"e,omitempty"`
+	EntNames []string     `json:"n,omitempty"`
+	EntRec   []string     `json:"r,omitempty"`
+	EntType  []string     `json:"t,omitempty"`
 
-	Tiles     []compTile
-	TileNames []string
+	Tiles     []compTile `json:"i,omitempty"`
+	TileNames []string   `json:"m,omitempty"`
 
-	Label   string
-	Item    string
-	Version uint64
+	Icons []Icn `json:"c,omitempty"`
+
+	Label   string `json:"l,omitempty"`
+	Item    string `json:"f,omitempty"`
+	Version uint64 `json:"v,omitempty"`
 }
 
 type compTile struct {
-	Pos  compXy
-	Name uint16
+	Pos  compXy `json:"p,omitempty"`
+	Name uint16 `json:"n,omitempty"`
 }
-
-type compItems struct {
-	Name  string
-	Count int
-}
-
 type compEntity struct {
-	Name       uint16
-	Pos        compXy
-	Dir        uint8
-	Type       uint16
-	Rec        uint16
-	Neighbours []uint16
+	Name       uint16   `json:"n,omitempty"`
+	Pos        compXy   `json:"p,omitempty"`
+	Dir        uint8    `json:"d,omitempty"`
+	Type       uint16   `json:"t,omitempty"`
+	Rec        uint16   `json:"r,omitempty"`
+	Neighbours []uint16 `json:"n,omitempty"`
 }
 
 func compressGzip(data []byte) []byte {

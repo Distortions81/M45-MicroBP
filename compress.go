@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"compress/zlib"
 	"encoding/base64"
-	"encoding/gob"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -138,6 +137,7 @@ func compress() {
 			Dir: ent.Direction, Name: entNameMap[ent.Name], Type: typeMap[ent.Type], Rec: recipeMap[ent.Recipe], Neighbours: ent.Neighbours},
 		)
 	}
+	compbp.Icons = newbook.Blueprint.Icons
 
 	//Tiles
 	for _, tile := range newbook.Blueprint.Tiles {
@@ -154,6 +154,7 @@ func compress() {
 		)
 	}
 
+	compbp.Icons = newbook.Blueprint.Icons
 	compbp.Item = newbook.Blueprint.Item
 	compbp.Label = newbook.Blueprint.Label
 	compbp.Version = newbook.Blueprint.Version
@@ -161,29 +162,23 @@ func compress() {
 	//JSON OUT DEBUG
 	outbuf := new(bytes.Buffer)
 	enca := json.NewEncoder(outbuf)
-	enca.SetIndent("", "\t")
 	if err := enca.Encode(compbp); err != nil {
 		fmt.Println("WriteGCfg: enc.Encode failure")
 	}
-	fmt.Println(outbuf.String())
+	outtwo := new(bytes.Buffer)
+	json.Compact(outtwo, outbuf.Bytes())
 
-	//GOB ENCODE
-	var buf bytes.Buffer
-	enc := gob.NewEncoder(&buf)
-	err = enc.Encode(compbp)
-	if err != nil {
-		fmt.Println("ERROR: Gob encode failure:", err)
-		os.Exit(1)
-	}
-	fmt.Printf("gob length: %v\n", len(buf.Bytes()))
+	fmt.Println(outtwo.String())
 
-	gz := compressGzip(buf.Bytes())
+	fmt.Printf("in length: %v\n", len(input))
+
+	gz := compressGzip(outbuf.Bytes())
 	fmt.Printf("gz length: %v\n", len(gz))
 
 	dst := encode85(string(gz))
 	fmt.Printf("asci85 length: %v\n", len(dst))
 
-	fileName = "micro.txt"
+	fileName = "micro.gz"
 	err = os.WriteFile(fileName, []byte(dst), 0644)
 	if err != nil {
 		fmt.Println("ERROR: Failed to write dst:", err)
