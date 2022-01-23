@@ -3,13 +3,8 @@ package main
 import (
 	"bytes"
 	"compress/zlib"
-	"encoding/ascii85"
-	"encoding/base64"
-	"encoding/gob"
-	"encoding/json"
+	"flag"
 	"fmt"
-	"io/ioutil"
-	"os"
 )
 
 //Max sizes
@@ -25,11 +20,15 @@ type Tile struct {
 	Position Xy     `json:"position"`
 	Name     string `json:"name"`
 }
+
 type Ent struct {
-	Entity_number int    `json:"entity_number"`
-	Name          string `json:"name"`
-	Position      Xy     `json:"position"`
-	Direction     uint8  `json:"direction"`
+	Entity_number int      `json:"entity_number"`
+	Name          string   `json:"name"`
+	Position      Xy       `json:"position"`
+	Direction     uint8    `json:"direction"`
+	Recipe        string   `json:"recipe"`
+	Neighbours    []uint16 `json:"neighbours"`
+	Type          string   `json:"type"`
 }
 
 type SignalData struct {
@@ -39,7 +38,7 @@ type SignalData struct {
 
 type Icn struct {
 	Signal SignalData `json:"signaldata"`
-	Index  int16      `json:"index"`
+	Index  uint16     `json:"index"`
 }
 
 type BluePrintData struct {
@@ -61,177 +60,84 @@ type RootData struct {
 	Blueprint     BluePrintData     `json:"blueprint"`
 }
 
+//bool pointer to bool
+func bAddr(b *bool) bool {
+	boolVar := *b
+
+	if boolVar {
+		return boolVar
+	}
+
+	return false
+
+}
+
+var doCompress bool = false
+var doDecompress bool = false
+
 func main() {
 
-	var input []byte
-	var err error
+	doCompressP := flag.Bool("doCompress", false, "convert blueprint to uBP format")
+	doDecompressP := flag.Bool("doDecompress", true, "convert uBP to blueprint format")
+	flag.Parse()
 
-	// Open the input file
-	input, err = os.ReadFile("bp.txt")
-	if err != nil {
-		fmt.Println("ERROR: Opening input file", err)
-		os.Exit(1)
+	doCompress = bAddr(doCompressP)
+	doDecompress = bAddr(doDecompressP)
+
+	if doCompress {
+		fmt.Println("Compressing to uBP format")
+		compress()
+		return
+	} else if doDecompress {
+		fmt.Println("Decompressing from uBP format")
+		decompress()
+		return
+	} else {
+		fmt.Println("No action specified, try -h for help")
+		return
 	}
 
-	fmt.Println("Input file size:", len(input))
+}
 
-	//Max input
-	if len(input) > maxInput {
-		fmt.Println("ERROR: Input data too large.")
-		os.Exit(1)
-	}
-
-	data, err := base64.StdEncoding.DecodeString(string(input[1:]))
-	if err != nil {
-		fmt.Println("ERROR: decoding input:", err)
-		os.Exit(1)
-	}
-
-	r, err := zlib.NewReader(bytes.NewReader(data))
-	if err != nil {
-		fmt.Println("ERROR: decompress start failure:", err)
-		os.Exit(1)
-	}
-	enflated, err := ioutil.ReadAll(r)
-	if err != nil {
-		fmt.Println("ERROR: Decompress read failure:", err)
-		os.Exit(1)
-	}
-
-	//Max decompressed size
-	if len(enflated) > maxJson {
-		fmt.Println("ERROR: Input data too large.")
-		os.Exit(1)
-	}
-
-	newbook := RootData{}
-
-	err = json.Unmarshal(enflated, &newbook)
-	if err != nil {
-		fmt.Println("ERROR: JSON Unmarshal failure:", err)
-		os.Exit(1)
-	}
-
-	fileName := "shrunk.json"
-	err = os.WriteFile(fileName, enflated, 0644)
-	if err != nil {
-		fmt.Println("ERROR: Failed to write json:", err)
-		os.Exit(1)
-	}
-	fmt.Println("Wrote json to", fileName)
-
-	//Make compact format bp
-	var compbp compBPData
-	var entNameMap = make(map[string]uint8)
-	var tileNameMap = make(map[string]uint8)
-
-	var entNumber uint8 = 1
-	for _, ent := range newbook.Blueprint.Entities {
-		if entNameMap[ent.Name] == 0 {
-			entNameMap[ent.Name] = entNumber
-			entNumber++
-		}
-	}
-
-	for _, ent := range newbook.Blueprint.Entities {
-		xyh := false
-		xhf := float32(ent.Position.X - float32(int(ent.Position.X)))
-		yhf := float32(ent.Position.Y - float32(int(ent.Position.Y)))
-
-		if xhf > 0.0 || yhf > 0.0 {
-			xyh = true
-		}
-		compbp.Ents = append(compbp.Ents, compEntity{
-			X: uint16(ent.Position.X), Y: uint16(ent.Position.Y),
-			XYh: xyh,
-			Dir: ent.Direction, Name: entNameMap[ent.Name],
-		})
-		compbp.EntNames = make([]string, len(entNameMap))
-		for key, nameNum := range entNameMap {
-			compbp.EntNames[nameNum-1] = key
-		}
-	}
-
-	entNumber = 1
-	for _, tile := range newbook.Blueprint.Tiles {
-		if tileNameMap[tile.Name] == 0 {
-			tileNameMap[tile.Name] = entNumber
-			entNumber++
-		}
-	}
-
-	for _, tile := range newbook.Blueprint.Tiles {
-		xyh := false
-		xhf := float32(tile.Position.X - float32(int(tile.Position.X)))
-		yhf := float32(tile.Position.Y - float32(int(tile.Position.Y)))
-
-		if xhf > 0.0 || yhf > 0.0 {
-			xyh = true
-		}
-		compbp.Tiles = append(compbp.Tiles, compTile{
-			X: uint16(tile.Position.X), Y: uint16(tile.Position.Y),
-			XYh: xyh, Name: tileNameMap[tile.Name],
-		})
-		compbp.TileNames = make([]string, len(tileNameMap))
-		for key, nameNum := range tileNameMap {
-			compbp.TileNames[nameNum-1] = key
-		}
-	}
-
-	var buf bytes.Buffer
-	enc := gob.NewEncoder(&buf)
-	err = enc.Encode(compbp)
-	if err != nil {
-		fmt.Println("ERROR: Gob encode failure:", err)
-		os.Exit(1)
-	}
-	fmt.Printf("gob length: %v\n", len(buf.Bytes()))
-
-	gz := compressGzip(buf.Bytes())
-	fmt.Printf("gz length: %v\n", len(gz))
-
-	dst := make([]byte, ascii85.MaxEncodedLen(len(gz)))
-	ascii85.Encode(dst, gz)
-	dst = bytes.Trim(dst, "\x00")
-	dstStr := string(dst)
-	fmt.Printf("asci85 length: %v\n", len(dstStr))
-	//fmt.Println(string(dst))
-
-	fileName = "micro.txt"
-	err = os.WriteFile(fileName, []byte(dstStr), 0644)
-	if err != nil {
-		fmt.Println("ERROR: Failed to write dst:", err)
-		os.Exit(1)
-	}
-	fmt.Println("Wrote dst to", fileName)
+type compXy struct {
+	X   int16
+	Y   int16
+	XYh bool
 }
 
 type compBPData struct {
 	Ents     []compEntity
 	EntNames []string
+	EntRec   []string
+	EntType  []string
+	Items    []string
 
 	Tiles     []compTile
 	TileNames []string
 
 	Label   string
+	Item    string
 	Version uint64
 }
 
 type compTile struct {
-	X    uint16
-	Y    uint16
-	XYh  bool
-	Name uint8
+	Pos  compXy
+	Name uint16
+}
+
+type compItems struct {
+	Name  int
+	Count int
 }
 
 type compEntity struct {
-	X   uint16
-	Y   uint16
-	XYh bool
-
-	Dir uint8
-
-	Name uint8
+	Name       uint16
+	Pos        compXy
+	Dir        uint8
+	Type       uint16
+	Rec        uint16
+	Items      []compItems
+	Neighbours []uint16
 }
 
 func compressGzip(data []byte) []byte {
