@@ -172,14 +172,14 @@ func compress() {
 
 	fmt.Printf("in length: %v\n", len(input))
 
-	gz := compressBzip2(outbuf.Bytes())
-	fmt.Printf("bzip2 length: %v\n", len(gz))
+	bz2 := compressBzip2(outbuf.Bytes())
+	fmt.Printf("bzip2 length: %v\n", len(bz2))
 
-	dst := encode85(string(gz))
-	fmt.Printf("asci85 length: %v\n", len(dst))
+	//dst := encode85(string(bz2))
+	//fmt.Printf("asci85 length: %v\n", len(dst))
 
-	fileName = "ubp.txt"
-	err = os.WriteFile(fileName, []byte(dst), 0644)
+	fileName = "ubp.bz2"
+	err = os.WriteFile(fileName, []byte(bz2), 0644)
 	if err != nil {
 		fmt.Println("ERROR: Failed to write dst:", err)
 		os.Exit(1)
