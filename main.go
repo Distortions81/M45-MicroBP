@@ -5,6 +5,8 @@ import (
 	"compress/zlib"
 	"flag"
 	"fmt"
+
+	"github.com/dsnet/compress/bzip2"
 )
 
 //Max sizes
@@ -139,6 +141,17 @@ func compressGzip(data []byte) []byte {
 	w, err := zlib.NewWriterLevel(&b, zlib.BestCompression)
 	if err != nil {
 		fmt.Println("ERROR: Gzip writer failure:", err)
+	}
+	w.Write(data)
+	w.Close()
+	return b.Bytes()
+}
+
+func compressBzip2(data []byte) []byte {
+	var b bytes.Buffer
+	w, err := bzip2.NewWriter(&b, &bzip2.WriterConfig{Level: 9})
+	if err != nil {
+		fmt.Println("ERROR: Bzip writer failure:", err)
 	}
 	w.Write(data)
 	w.Close()
